@@ -1,0 +1,29 @@
+{
+"framerate":24,
+"images":["assets.png"],
+"frames":[
+    [1222, 0, 36, 28, 0, 0, 0],
+    [1184, 0, 38, 30, 0, 0, 0],
+    [1146, 0, 38, 32, 0, 0, 0],
+    [1108, 0, 38, 33, 0, 0, 0],
+    [1070, 0, 38, 34, 0, 0, 0],
+    [1258, 0, 38, 21, 0, 0, 0],
+    [478, 0, 478, 387, 0, -1, -6],
+    [0, 0, 478, 387, 0, -1, -6],
+    [956, 0, 114, 133, 0, 0, 0]
+],
+"animations":{
+    "spaceshipMoving": {
+        "frames": [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4],
+        "speed": 1
+    },
+    "spaceshipIdle": {"frames": [0], "speed": 1},
+    "asteroidAlive": {"frames": [8], "speed": 1},
+    "spaceshipDestroyed": {
+        "frames": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+        "speed": 1
+    },
+    "startmenu": {"frames": [6], "speed": 1},
+    "gameovermenu": {"frames": [7], "speed": 1}
+}
+}
