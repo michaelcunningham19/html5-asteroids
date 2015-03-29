@@ -1,146 +1,175 @@
-var Asteroid = function(stage, assetManager, ship) {
+var Asteroid = function (stage, assetManager, ship, projectile) {
+    'use strict';
+    
+    var speed, isMoving, yDisplace, xDisplace, shipSprite, clip, myScope, lengthProjectiles;
     
     // initialization
-    var shipClip = ship.getClip();
+    shipSprite = ship.getSprite();
     
-    // construct custom event objects
-    var eventAsteroidDestroyed = new createjs.Event('onAsteroidDestroyed', true);
+    // to keep track of scope
+    myScope = this;
 
     // construct clip for this object and add to stage
-    var clip = assetManager.getSprite('assets');
-    clip.gotoAndStop('asteroidAlive');
-    var clipMover = new MoverDiagonal(clip, stage);
+    clip = assetManager.getSprite('assets', 'asteroidAlive');
+    
+    // initialize
+    speed     = 2;
+    isMoving  = false;
+    yDisplace = xDisplace = -1;
     
     // --------------------------------------------- private methods
     function randomMe(low, high) {
         return Math.round(Math.random() * (high - low)) + low;
     }
-
+    
     // ---------------------------------------------- public methods
-    this.setupMe = function() {
+    this.getClip = function () {
+        return clip;
+    };
+    
+    this.setupMe = function () {
+        
+        var dimensions, radians;
         
         // random selection of speed of asteroid
-        clipMover.setSpeed(randomMe(2,6));
+        speed = randomMe(1, 5);
 
         // get bounds of sprite so we can determine width / height
-        var dimensions = clip.getBounds();
+        dimensions = clip.getBounds();
 
-        // bug starts on left or right of stage?
-        if (randomMe(1, 2) == 1) {
+        // asteroid starts on left or right of stage?
+        if (randomMe(1, 2) === 1) {
+            
             // move right
-            clip.x = -dimensions.width;
-            // randomly select starting y location of mower
-            clip.y = randomMe(50, stage.canvas.height - 50);
+            clip.x = -50;
+            
+            // randomly select starting y location of asteroid
+            clip.y = randomMe(50, stage.canvas.height);
             clip.rotation = randomMe(45, -45);
             
         } else {
             
             // move left
-            clip.x = stage.canvas.width;
-            clip.y = randomMe(50, stage.canvas.height - 50);
+            clip.x = stage.canvas.width + 50;
+            clip.y = randomMe(50, stage.canvas.height);
             clip.rotation = randomMe(135, 225);
             
         }
 
         // fire startMe again to take the new rotation of the asteroid
         clip.gotoAndPlay('asteroidAlive');
-        clipMover.startMe();
+        
+        if (!isMoving) {
+            
+            // convert current rotation of object to radians
+            radians = clip.rotation * (Math.PI / 180);
+            
+            // calculating X and Y displacement
+            xDisplace = Math.cos(radians) * speed;
+            yDisplace = Math.sin(radians) * speed;
+            clip.play();
+            
+            // setup listener to listen for ticker to control animation
+            createjs.Ticker.addEventListener('tick', function () {
+                
+                // move sprite
+                clip.x += xDisplace;
+                clip.y += yDisplace;
+                
+                if (clip.x < -75) {
+                    clip.x = clip.x + canvas.width;
+                }
+
+                if (clip.x > canvas.width + 75) {
+                    clip.x = -75;
+                }
+
+                if (clip.y < -75) {
+                    clip.y = clip.y + canvas.height - 100;
+                }
+
+                if (clip.y > canvas.height + 75) {
+                    clip.y = -75;
+                }
+                
+            });
+            
+            isMoving = true;
+        }
 
         // setup listener to listen for ticker to monitor collisions
         createjs.Ticker.addEventListener('tick', onCollisionTest);
+        
+        // fix the reg point
+        clip.regX = dimensions.width / 2;
+        clip.regY = dimensions.height / 2;
 		
-        // add asteroids so they are below the snake (snake)
-        stage.addChildAt(clip, stage.getChildIndex(shipClip));		
+        // add asteroids so they are below the ship
+        stage.addChildAt(clip, stage.getChildIndex(shipSprite));
 
-        // listen for when my asteroid goes off the screen and kill it if it does
-        clip.addEventListener('onMovingDiagonalOffStage', onKillMe);
     };
 
     // ----------------------------------------------- event handlers
     function onCollisionTest(e) {
+        
+        var x, a, b, c;
+        
+        clip.rotation += 0.5;
+        
         // only do collision test on every other tick to save on processing
-        if ((createjs.Ticker.getTicks() % 2 === 0) && (!ship.getKilled())) {
-
-            /*
-            // HITTEST APPROACH
-            var point = clip.globalToLocal(snakeClip.x, snakeClip.y);
-            if (clip.hitTest(point.x, point.y)) {
-                console.log("collision!");
+        if ((createjs.Ticker.getTicks() % 2 === 0)) {
+            
+            lengthProjectiles = projectiles.length;
+            
+            for (x = 0; x < lengthProjectiles; x += 1) {
+                
+                if (ndgmr.checkPixelCollision(clip, projectiles[x].getClip(), 0.75)) {
+                    
+                    onKillMe();
+                    onAsteroidDestroyed();
+                    createjs.Ticker.removeEventListener('tick', onCollisionTest);
+                    projectiles[x].remove();
+                    
+                }
+                
             }
-            */
-
-            // LESSON COLLISION DETECTION
-            // radius collision detection
-            // Calculate difference between centres
-            var a = shipClip.x - clip.x;
-            var b = shipClip.y - clip.y;
+            
+        } else {
+            
+            a = shipSprite.x - clip.x;
+            b = shipSprite.y - clip.y;
+            
             // Get distance with Pythagoras
-            var c = Math.sqrt((a * a) + (b * b));
-            // bug has a radius of 20
-            // snake has a radius of 75
-            // force the radius of the circle on the snake to only be 5
-            // sum of 5 + 20 = 25
-            if (c <= 25) {
-                // collision detection with snake
-                clip.dispatchEvent(eventAsteroidDestroyed);
-                onKillMe();
-            }
+            c = Math.sqrt((a * a) + (b * b));
 
-            /*
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHALLENGE SOLUTION
-            // radius collision detection
-            // Calculate difference between centres
-            var distX = 0;
-            var distY = 0;
-            var direction = snakeClip.direction;
-            // transform circle depending on direction of snake so it is always over the head
-            if (direction == MoverDirection.LEFT) {
-                distX = snakeClip.x - 30 - clip.x;
-                distY = snakeClip.y - clip.y;
-            } else if (direction == MoverDirection.RIGHT) {
-                distX = snakeClip.x + 30 - clip.x;
-                distY = snakeClip.y - clip.y;
-            } else if (direction == MoverDirection.UP) {
-                distX = snakeClip.x - clip.x;
-                distY = snakeClip.y - 30 - clip.y;
-            } else {
-                distX = snakeClip.x - clip.x;
-                distY = snakeClip.y + 30 - clip.y;
-            }
-
-            // Get distance with Pythagoras
-            var dist = Math.sqrt((distX * distX) + (distY * distY));
-            // bug has a radius of 19
-            // snake has a radius of 75
-            // force the radius of the circle on the snake to only be 5
-            // sum of 5 + 19 = 24
-            if (dist <= 24) {
-                // collision detection with snake
-                clip.dispatchEvent(eventBugEaten);
+            if (c <= 75) {
+                
+                // collision detection with the ship
+                ship.destroy();
+                
+                // destroy this asteroid as well
                 onKillMe();
+                
             }
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            */
         }
     }
 
-    function onKillMe(e) {
+    function onKillMe() {
         
         createjs.Ticker.removeEventListener('tick', onCollisionTest);
-        clipMover.stopMe();
+        clip.stop();
         
-        // play death sequence of bug
-        clip.gotoAndPlay('asteroidDestroyed');
-        clip.addEventListener('animationend', onKilled);
-    }
+        // play death sequence of asteroid
+        clip.gotoAndPlay('asteroidDestroy');
+        clip.addEventListener('animationend', function () {
+            
+            // cleanup event listeners
+            clip.removeEventListener('animationend', this);
 
-    function onKilled(e) {
-        
-        // cleanup event listeners
-        clip.removeEventListener('animationend', onKilled);
-        
-        // remove displayobject
-        stage.removeChild(clip);
+            // remove this asteroid object
+            stage.removeChild(clip);
+            
+        });
         
     }
 };

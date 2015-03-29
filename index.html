@@ -5,18 +5,28 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Asteroids : Michael Cunningham</title>
+    <link href="http://fonts.googleapis.com/css?family=Droid+Sans" rel="stylesheet" type="text/css">
+    <link href="assets/css/fontello-embedded.css" rel="stylesheet" type="text/css">
 	<link href="assets/css/style.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 	<canvas id="stage"></canvas>
-	<div id="fps"></div>
+	<div id="lblFPS" class="label"></div>
+    <div id="lblDestroyed" class="label"></div>
+    <div id="lblTimer" class="label"></div>
+    <div id="wrapper">
+        <div id="btnVolume" class="label">
+            <i class="icon-volume-up"></i>
+        </div>
+    </div>
     <script src="https://code.createjs.com/createjs-2014.12.12.min.js"></script>
+    <script src="assets/js/ndgmr.Collision.js"></script>
 	<script src="assets/js/game.js"></script>
     <script src="assets/js/classes/Manifest.js"></script>
     <script src="assets/js/classes/AssetManager.js"></script>
-    <script src="assets/js/classes/Mover.js"></script>
-    <script src="assets/js/classes/MoverDiagonal.js"></script>
 	<script src="assets/js/classes/Asteroid.js"></script>
 	<script src="assets/js/classes/Spaceship.js"></script>
+    <script src="assets/js/classes/Projectile.js"></script>
+    <script src="assets/js/classes/Timer.js"></script>
 </body>
 </html>
