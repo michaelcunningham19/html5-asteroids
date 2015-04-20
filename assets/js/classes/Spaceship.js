@@ -1,34 +1,19 @@
 var Spaceship = function (stage, assetManager) {
-    'use strict';
-    
-    // variable declaration
-    var sprite, spriteHeight, spriteWidth, isDestroyed, myScope, eventShipDestroyed, eventShipVelocityChange, maxVelocity, velocity, accelerant, position, rotationSpeed, isMoving, keyDirection, xSpeed, ySpeed, whichGunFiredLast, timeSinceLastShot, fireRate, shipThrustersPlaying;
     
     // variable initialization
-    sprite            = assetManager.getSprite('assets');
-    spriteHeight      = sprite.getBounds().height;
-    spriteWidth       = sprite.getBounds().width;
-    maxVelocity       = 1;
-    velocity          = [0, 0];
-    position          = [280, 300];
-    accelerant        = 0.25;
-    isMoving          = false;
-    isDestroyed       = false;
-    keyDirection      = 2;
-    rotationSpeed     = 10;
-    xSpeed            = 0;
-    ySpeed            = 0;
-    whichGunFiredLast = 0;  // 0 = left, 1 = right
-    timeSinceLastShot = 0;
-    fireRate          = 400;
+    var sprite            = assetManager.getSprite('assets');
+    var maxVelocity       = 1;
+    var velocity          = [0, 0];
+    var position          = [stage.canvas.width, 0];
+    var accelerant        = 0.1;
+    var isDestroyed       = false;
+    var xSpeed            = 0;
+    var ySpeed            = 0;
+    var whichGunFiredLast = 0;  // 0 = left, 1 = right
+    var timeSinceLastShot = 0;
+    var fireRate          = 500;
+    var keyPressed        = 0;
     
-    // to keep track of scope
-    myScope = this;
-
-    // construct custom event objects
-    eventShipDestroyed      = new createjs.Event('onShipDestroyed', true);
-    eventShipVelocityChange = new createjs.Event('onShipVelocityChange', true);
-
     // add spaceship to stage
     stage.addChild(sprite);
 
@@ -41,45 +26,18 @@ var Spaceship = function (stage, assetManager) {
         return sprite;
     };
 
-    this.setKeyDirection = function (value) {
-        keyDirection = value;
-    };
-
     // ----------------------------------------------- event handlers
-    function onDestroyed(e) {
-        
-        // cleanup
-        sprite.stop();
-        sprite.removeEventListener('animationend', onDestroyed);
-        
-        // dispatch event that the ship has been killed!
-        sprite.dispatchEvent(eventShipDestroyed);
-    }
-    
-    function onVelocityChange(e) {
+    function onVelocityChange() {
         
         sprite.scaleX = 1;
 
         // up arrow
-        if (keyDirection === 3) {
+        if (keyPressed === 3) {
             
             xSpeed = velocity[0] + accelerant * Math.sin(sprite.rotation * Math.PI / 180);
             ySpeed = velocity[1] - accelerant * Math.cos(sprite.rotation * Math.PI / 180);
             
             velocity = [xSpeed, ySpeed];
-
-            // throttle up the engines
-            if (shipThrustersPlaying) {
-                
-                createjs.Sound.play('shipThruster', '', 0, -1, .5, 0, null, null);
-                
-                sprite.gotoAndPlay('spaceshipMoving');
-                sprite.addEventListener('animationend', function () {
-                    sprite.stop();
-                    createjs.Sound.stop('shipThruster');
-                    shipThrustersPlaying = false;
-                });
-            }
 
         }
         
@@ -103,6 +61,9 @@ var Spaceship = function (stage, assetManager) {
             position[1] = 0;   
         }
         
+        //console.log('spaceship x: ' + sprite.x);
+        //console.log('spaceship y: ' + sprite.y);
+        
     }
     
     // ---------------------------------------------- public methods
@@ -110,27 +71,15 @@ var Spaceship = function (stage, assetManager) {
         return sprite;   
     }
     
-    this.accelerate = function (keyPressed) {
-        
-        this.setKeyDirection(keyPressed);
-        
-        if (!isMoving) {
-            
-            // setup listener to listen for ticker to control animation
-            shipThrustersPlaying = true;
-            createjs.Ticker.addEventListener('tick', onVelocityChange);
-        
-            isMoving = true;
-            
-        }
+    this.accelerate = function (key) {
+        keyPressed = key;
+        createjs.Ticker.addEventListener('tick', onVelocityChange);
     };
     
     this.fire = function () {
         
-        var projectile, now;
-        
-        projectile = new Projectile(sprite, stage, assetManager);
-        now        = Date.now();
+        var now        = Date.now();
+        var projectile = new Projectile(sprite, stage, assetManager, projectileID);
         
         if (now - timeSinceLastShot < fireRate) {
             return;
@@ -151,70 +100,72 @@ var Spaceship = function (stage, assetManager) {
         timeSinceLastShot = now;
         
         projectiles.push(projectile);
+        projectileID++;
         
     };
     
-    this.rotate = function (keyPressed) {
-        
-        this.setKeyDirection(keyPressed);
+    this.rotate = function (key) {
         
         sprite.gotoAndStop('spaceshipIdle');
         sprite.scaleX = 1;
      
-        if (keyDirection === 1) {
+        if (key === 1) {
             
             // rotating left
-            sprite.rotation -= rotationSpeed;
+            sprite.rotation -= 10;
 
-        } else if (keyDirection === 2) {
+        } else if (key === 2) {
             
             // rotating right
-            sprite.rotation += rotationSpeed;
+            sprite.rotation += 10;
             
         }
     };
 
     this.reset = function () {
         
-        var halfWidth, halfHeight;
-        
-        halfWidth  = (spriteWidth / 2);
-        halfHeight = (spriteHeight / 2);
-        
         sprite.gotoAndStop('spaceshipIdle');
-        
-        if (!isDestroyed) {
-            sprite.x = 280;
-            sprite.y = 300;
-        }
-        
-        sprite.regX = halfWidth;
-        sprite.regY = halfHeight;
+
+        sprite.regX = sprite.getBounds().width / 2;
+        sprite.regY = sprite.getBounds().height / 2;
         
         xSpeed      = 0;
         ySpeed      = 0;
+        position    = [canvas.width / 2, canvas.height / 2];
         velocity    = [0, 0];
         isDestroyed = false;
+        
+        if (isRestart) {
+            stage.addChild(sprite);   
+        }
         
         createjs.Ticker.addEventListener('tick', onVelocityChange);
         
     };
 
     this.destroy = function () {
-        
-        if (!isDestroyed) {
-            
-            isDestroyed = true;
 
+        isDestroyed = true;
+
+        sprite.stop();
+
+        // remove listener to stop animation
+        createjs.Ticker.removeEventListener('tick', onVelocityChange);
+
+        sprite.gotoAndPlay('spaceshipDestroyed');
+        sprite.addEventListener('animationend', function () {
+
+            // cleanup
             sprite.stop();
+            sprite.removeEventListener('animationend', this);
+
+            stage.removeChild(sprite);
+            sprite.x = -999;
+            sprite.y = -999;
             
-            // remove listener to stop animation
-            createjs.Ticker.removeEventListener('tick', onVelocityChange);
-            isMoving = false;
-            
-            sprite.gotoAndPlay('spaceshipDestroyed');
-            sprite.addEventListener('animationend', onDestroyed);
-        }
+            onGameOver();
+
+        });
         
     };
 };

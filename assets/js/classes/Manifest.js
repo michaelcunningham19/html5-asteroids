@@ -21,5 +21,10 @@ var manifest = [
         src: 'assets/sfx/thruster.ogg',
         id: 'shipThruster',
         data: 4
+    },
+    {
+        src: 'assets/sfx/asteroid_explosion.ogg',
+        id: 'asteroidExplosion',
+        data: 4
     }
 ];

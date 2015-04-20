@@ -6,10 +6,17 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Asteroids : Michael Cunningham</title>
     <link href="http://fonts.googleapis.com/css?family=Droid+Sans" rel="stylesheet" type="text/css">
-    <link href="assets/css/fontello-embedded.css" rel="stylesheet" type="text/css">
 	<link href="assets/css/style.css" rel="stylesheet" type="text/css">
+    <link href="/favicon.ico" rel="icon">
 </head>
 <body>
+	<div id="preloader">
+		<div id="state"></div>
+		<div id="progress">...</div>
+		<div id="progressbar">
+			<div class="bar"></div>
+		</div>
+	</div>
 	<canvas id="stage"></canvas>
 	<div id="lblFPS" class="label"></div>
     <div id="lblDestroyed" class="label"></div>
@@ -21,12 +28,12 @@
     </div>
     <script src="https://code.createjs.com/createjs-2014.12.12.min.js"></script>
     <script src="assets/js/ndgmr.Collision.js"></script>
-	<script src="assets/js/game.js"></script>
     <script src="assets/js/classes/Manifest.js"></script>
     <script src="assets/js/classes/AssetManager.js"></script>
 	<script src="assets/js/classes/Asteroid.js"></script>
 	<script src="assets/js/classes/Spaceship.js"></script>
     <script src="assets/js/classes/Projectile.js"></script>
     <script src="assets/js/classes/Timer.js"></script>
+    <script src="assets/js/game.js"></script>
 </body>
 </html>

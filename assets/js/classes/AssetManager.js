@@ -51,115 +51,134 @@
 * > getProgress() returns the progress of the loading of all assets in manifest as a decimal number (progress=1 means everything loaded)
 */
 
-var AssetManager = function() {
+var AssetManager = function (preloadProgressCounter, preloadProgressDisplay) {
+    
     // keep track of assets
     var manifest = null;
     var progress = 0;
+    
     // array of spritesheet objects
     var spriteSheets = [];
+    
     // array of JSON for each spritesheet
     var spriteSheetsJSON = [];
+    
     // LoadQueue object
-    preloader = new createjs.LoadQueue();
+    var preloader = new createjs.LoadQueue();
 
     // construct custom event object and initialize it
-    var eventAssetLoaded = new createjs.Event("onAssetLoaded");
-    var eventAllLoaded = new createjs.Event("onAllAssetsLoaded");
+    var eventAssetLoaded = new createjs.Event('onAssetLoaded');
+    var eventAllLoaded   = new createjs.Event('onAllAssetsLoaded');
 
 	// ------------------------------------------------------ event handlers
-    function onLoaded(e) {
-
-        console.log("asset loaded: " + e.item.src + " type: " + e.item.type);
+    function onLoaded (e) {
 
         // what type of asset was loaded?
-        switch(e.item.type) {
-            case createjs.LoadQueue.IMAGE:
+        switch (e.item.type) {
+            case createjs.LoadQueue.IMAGE :
+                
                 // spritesheet loaded
                 // get id and source from manifest of currently loaded spritesheet
                 var id = e.item.id;
+                
                 // store a reference to the actual image that was preloaded
                 var image = e.result;
+                
                 // get data object from JSON array (previously loaded)
                 var data = spriteSheetsJSON[id];
-                if (data === undefined) console.log("ASSETMANAGER ERROR > JSON not defined for spritesheet - Check manifest [JSON must be listed before spritesheet image]");
+                
                 // add images property to data object and tack on loaded spritesheet image from LoadQueue
                 // this is so that the SpriteSheet constructor doesn't preload the image again
                 // it will do this if you feed it the string path of the spritesheet
                 data.images = [image];
+                
                 // construct Spritesheet object from source
                 var spriteSheet = new createjs.SpriteSheet(data);
+                
                 // store spritesheet object for later retrieval
                 spriteSheets[id] = spriteSheet;
-                break;
+                
+            break;
 
-            case createjs.LoadQueue.JSON:
+            case createjs.LoadQueue.JSON :
+                
                 // get spritesheet this JSON object belongs to and store for spritesheet construction later
                 var spriteSheetID = e.item.spritesheet;
                 spriteSheetsJSON[spriteSheetID] = e.result;
-                break;
+                
+            break;
 
-            case createjs.LoadQueue.SOUND:
+            case createjs.LoadQueue.SOUND :
                 // sound loaded
-                break;
+            break;
+            
         }
 
         // an asset has been loaded
         stage.dispatchEvent(eventAssetLoaded);
     }
 
-    function onProgress(e) {
-        progress = e.progress;
+    function onProgress (e) {
+        progress = Math.round(e.loaded * 100);
+        preloadProgressCounter.innerHTML = progress + '%';
+        preloadProgressDisplay.style.width = progress + '%';
     }
 
-    // called if there is an error loading the spriteSheet (usually due to a 404)
-    function onError(e) {
-        console.log("ASSETMANAGER ERROR > Error Loading asset");
-    }
-
-    function onComplete(e) {
-        console.log("All assets loaded");
+    function onComplete (e) {
+        
         spriteSheetsJSON = null;
+        
         // kill event listeners
-        preloader.removeEventListener("fileload", onLoaded);
-        preloader.removeEventListener("progress", onProgress);
-        preloader.removeEventListener("error", onError);
-        preloader.removeEventListener("complete", onComplete);
+        preloader.removeEventListener('fileload', onLoaded);
+        preloader.removeEventListener('progress', onProgress);
+        preloader.removeEventListener('complete', onComplete);
+        
+        preloadProgressDisplay.style.display = 'none';
+        preloadProgressCounter.style.display = 'none';
+        canvas.style.backgroundImage = '../gfx/background.png';
+        canvas.style.visibility = 'visible';
+
         // dispatch event that all assets are loaded
         stage.dispatchEvent(eventAllLoaded);
     }
 
 	// ------------------------------------------------------ public methods
-    this.getSprite = function(spriteSheetID, frameLabel) {
+    this.getSprite = function (spriteSheetID, frameLabel) {
+        
         // construct sprite object to animate the frames (I call this a clip)
         var sprite = new createjs.Sprite(spriteSheets[spriteSheetID]);
+        
         sprite.name = spriteSheetID;
         sprite.x = 0;
         sprite.y = 0;
         sprite.currentFrame = 0;
-        if (frameLabel != undefined) sprite.gotoAndStop(frameLabel);
+        
+        if (frameLabel !== undefined) {
+            sprite.gotoAndStop(frameLabel);
+        }
+        
         return sprite;
     };
 
-    this.getProgress = function() {
-        return progress;
-    };
-
-	this.getSpriteSheet = function(id) {
+	this.getSpriteSheet = function (id) {
 		return spriteSheets[id];
 	};
 
-    this.loadAssets = function(myManifest) {
+    this.loadAssets = function (myManifest) {
+        
         // setup manifest
         manifest = myManifest;
-        // if browser doesn't suppot the ogg it will attempt to look for an mp3
-        createjs.Sound.alternateExtensions = ["mp3","wav"];
+        
+        // if browser doesn't support the ogg it will attempt to look for an mp3
+        createjs.Sound.alternateExtensions = ['mp3', 'wav'];
+        
         // registers the PreloadJS object with SoundJS - will automatically have access to all sound assets
         preloader.installPlugin(createjs.Sound);
-        preloader.addEventListener("fileload", onLoaded);
-        preloader.addEventListener("progress", onProgress);
-        preloader.addEventListener("error", onError);
-        preloader.addEventListener("complete", onComplete);
+        preloader.addEventListener('fileload', onLoaded);
+        preloader.addEventListener('progress', onProgress);
+        preloader.addEventListener('complete', onComplete);
         preloader.setMaxConnections(5);
+        
         // load first spritesheet to start preloading process
         preloader.loadManifest(manifest);
     };
